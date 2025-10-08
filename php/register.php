@@ -1,32 +1,51 @@
 <?php
-header('Content-Type: application/json');
-ini_set('display_errors', 0);
+ini_set('display_errors',1);
 error_reporting(E_ALL);
+header('Content-Type: application/json');
 
-// --- MySQL connection using Render environment variables ---
-$mysqli = new mysqli(
-    getenv("MYSQL_HOST"),
-    getenv("MYSQL_USER"),
-    getenv("MYSQL_PASSWORD"),
-    getenv("MYSQL_DB")
-);
-if($mysqli->connect_error){
-    echo json_encode(["status"=>"error","msg"=>"MySQL connection failed"]);
+// ----------------- MySQL Connection -----------------
+$host = getenv('MYSQL_HOST');
+$port = getenv('MYSQL_PORT');
+$user = getenv('MYSQL_USER');
+$pass = getenv('MYSQL_PASSWORD');
+$db   = getenv('MYSQL_DB');
+
+$mysqli = mysqli_init();
+$mysqli->ssl_set(NULL, NULL, '/etc/ssl/certs/ca-certificates.crt', NULL, NULL); 
+if (!$mysqli->real_connect($host, $user, $pass, $db, $port, NULL, MYSQLI_CLIENT_SSL)) {
+    echo json_encode(['status'=>'error','msg'=>'MySQL connect failed: '.$mysqli->connect_error]);
     exit;
 }
 
-// --- MongoDB connection using Render environment variable ---
+// ----------------- MongoDB Connection -----------------
 require __DIR__ . '/../vendor/autoload.php';
 use MongoDB\Client;
+
+$mongoUri = getenv('MONGO_URL'); // Use your MongoDB Atlas URI
 try {
-    $mongo = new Client(getenv("MONGO_URI"));
-    $profiles = $mongo->new_profiles->profiles;
-}catch(Exception $e){
-    echo json_encode(["status"=>"error","msg"=>"MongoDB connection failed: ".$e->getMessage()]);
+    $mongo = new Client($mongoUri);
+    $profiles = $mongo->ProfileHub->profiles; // change DB name if different
+} catch(Exception $e) {
+    echo json_encode(['status'=>'error','msg'=>'MongoDB connect failed: '.$e->getMessage()]);
     exit;
 }
 
-// --- Get POST Data ---
+// ----------------- Redis Connection -----------------
+$redisUrl = getenv('REDIS_URL'); // redis://host:port
+$redis = null;
+if($redisUrl){
+    $p = parse_url($redisUrl);
+    try {
+        $redis = new Redis();
+        $redis->connect($p['host'], $p['port']);
+        if(!empty($p['pass'])) $redis->auth($p['pass']);
+    } catch(Exception $e) {
+        // Redis is optional, warn but don't stop registration
+        error_log("Redis connection failed: ".$e->getMessage());
+    }
+}
+
+// ----------------- POST Data -----------------
 $name = trim($_POST['name'] ?? '');
 $email = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
@@ -37,7 +56,7 @@ $age = intval($_POST['age'] ?? 0);
 $address = trim($_POST['address'] ?? '');
 $gender = trim($_POST['gender'] ?? '');
 
-// --- Validation ---
+// ----------------- Validation -----------------
 if(empty($name) || empty($email) || empty($password)){
     echo json_encode(["status"=>"error","msg"=>"Name, Email, Password required"]);
     exit;
@@ -51,15 +70,16 @@ if($password !== $confirm){
     exit;
 }
 
-// --- Hash password ---
+// ----------------- Hash password -----------------
 $passHash = password_hash($password,PASSWORD_BCRYPT);
 
-// --- MySQL Insert ---
+// ----------------- MySQL Insert -----------------
 $stmt = $mysqli->prepare("INSERT INTO users (email,password) VALUES (?,?)");
 $stmt->bind_param("ss",$email,$passHash);
 if($stmt->execute()){
     $userId = $stmt->insert_id;
-    // MongoDB Insert
+
+    // ----------------- MongoDB Insert -----------------
     try{
         $profiles->insertOne([
             "userId"=>$userId,
@@ -72,16 +92,27 @@ if($stmt->execute()){
             "gender"=>$gender,
             "created_at"=>new MongoDB\BSON\UTCDateTime()
         ]);
+
+        // ----------------- Redis Session Example -----------------
+        if($redis){
+            $sessionKey = "session:user:$userId";
+            $redis->setex($sessionKey, 3600, json_encode([
+                'userId'=>$userId,
+                'email'=>$email,
+                'created'=>time()
+            ]));
+        }
+
         echo json_encode(["status"=>"success","msg"=>"Registered successfully"]);
     }catch(Exception $e){
-        $mysqli->query("DELETE FROM users WHERE id=$userId"); // rollback
-        echo json_encode(["status"=>"error","msg"=>"MongoDB insert failed"]);
+        // rollback MySQL if MongoDB fails
+        $mysqli->query("DELETE FROM users WHERE id=$userId");
+        echo json_encode(["status"=>"error","msg"=>"MongoDB insert failed: ".$e->getMessage()]);
     }
 }else{
-    echo json_encode(["status"=>"error","msg"=>"Email might already exist"]);
+    echo json_encode(["status"=>"error","msg"=>"Email might already exist or MySQL insert failed"]);
 }
 
 $stmt->close();
 $mysqli->close();
 ?>
-
