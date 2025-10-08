@@ -1,6 +1,10 @@
 <?php
 header('Content-Type: application/json');
 ini_set('display_errors', 0);
+//
+header("Access-Control-Allow-Origin: https://guvi-intern-md3o.onrender.com");
+header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 
 // --- MySQL ---
 $mysqli = new mysqli(
@@ -53,3 +57,4 @@ if($result && password_verify($password, $result['password'])){
 
 $mysqli->close();
 ?>
+
