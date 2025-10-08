@@ -33,7 +33,7 @@ $(document).ready(function() {
   // AJAX registration
   $(document).on("click", "#registerBtn", function() {
     $.ajax({
-      url: "php/register.php",
+      url: "https://profilehub-backend.onrender.com/php/register.php",
       type: "POST",
       data: {
         name: $("#name").val(),
@@ -63,3 +63,4 @@ $(document).ready(function() {
   });
 
 });
+
