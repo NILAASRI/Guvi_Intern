@@ -1,28 +1,29 @@
 <?php
 header('Content-Type: application/json');
+ini_set('display_errors', 0);
 
-// --- MySQL connection ---
-$mysqli = new mysqli("localhost", "root", "", "student");
-// $mysqli = new mysqli(
-//     "ProfileHub-db.c3i4o2cm07zf.ap-south-1.rds.amazonaws.com", 
-//     "admin", 
-//     "Nilaasri30062004", 
-//     "profilehub");
+// --- MySQL ---
+$mysqli = new mysqli(
+    getenv("MYSQL_HOST"),
+    getenv("MYSQL_USER"),
+    getenv("MYSQL_PASSWORD"),
+    getenv("MYSQL_DB")
+);
 if($mysqli->connect_error){
-    die(json_encode(["status"=>"error","msg"=>"MySQL connection failed: ".$mysqli->connect_error]));
+    echo json_encode(["status"=>"error","msg"=>"MySQL connection failed"]);
+    exit;
 }
 
-// --- Redis connection ---
+// --- Redis (optional) ---
 $redis = new Redis();
-try {
-    $redis->connect('127.0.0.1', 6379);
-    //$redis->connect('profilehub-redis-ecscsf.serverless.aps1.cache.amazonaws.com:6379');
-} catch (Exception $e) {
+try{
+    $redis->connect(getenv("REDIS_HOST"), 6379);
+}catch(Exception $e){
     echo json_encode(["status"=>"error","msg"=>"Redis connection failed: ".$e->getMessage()]);
     exit;
 }
 
-// --- Get POST data safely ---
+// --- Get POST Data ---
 $email = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
 
@@ -46,8 +47,8 @@ if($result && password_verify($password, $result['password'])){
     $redis->expire($sessionId, 3600);
 
     echo json_encode(["status"=>"success", "sessionId"=>$sessionId]);
-} else {
-    echo json_encode(["status"=>"error", "msg"=>"Invalid login"]);
+}else{
+    echo json_encode(["status"=>"error","msg"=>"Invalid login"]);
 }
 
 $mysqli->close();
