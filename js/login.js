@@ -8,7 +8,7 @@ $(document).ready(function() {
 
         // AJAX request
         $.ajax({
-            url: 'https://your-render-backend.onrender.com/php/login.php',
+            url: 'https://guvi-intern-md3o.onrender.com/php/login.php',
             method: 'POST',
             dataType: 'json',
             data: { email, password, remember },
@@ -29,4 +29,5 @@ $(document).ready(function() {
         });
     });
 });
+
 
