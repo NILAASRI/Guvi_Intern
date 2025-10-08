@@ -57,11 +57,13 @@ $(document).ready(function() {
       },
       error: function(xhr, status, error) {
         console.error("AJAX Error:", status, error);
+        console.log("Response Text:", xhr.responseText); // see what PHP actually sent
         alert("Error during registration!");
       }
     });
   });
 
 });
+
 
 
