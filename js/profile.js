@@ -10,7 +10,7 @@ $(document).ready(function() {
     // --- Fetch Profile ---
     function fetchProfile() {
         $.ajax({
-            url: "https://your-render-backend.onrender.com/php/profile.php",
+            url: "https://guvi-intern-md3o.onrender.com/php/profile.php",
             type: "POST",
             contentType: "application/json",
             dataType: "json",
@@ -96,4 +96,5 @@ $(document).ready(function() {
     });
 
 });
+
 
