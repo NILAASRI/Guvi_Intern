@@ -1,34 +1,32 @@
 <?php
 header('Content-Type: application/json');
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
 
-// MySQL
-$mysqli = new mysqli("localhost","root","","student");
-// $mysqli = new mysqli(
-//     "profilehub-db.c3i4o2cm07zf.ap-south-1.rds.amazonaws.com", 
-//     "admin", 
-//     "Nilaasri30062004", 
-//     "profilehub");
+// --- MySQL connection using Render environment variables ---
+$mysqli = new mysqli(
+    getenv("MYSQL_HOST"),
+    getenv("MYSQL_USER"),
+    getenv("MYSQL_PASSWORD"),
+    getenv("MYSQL_DB")
+);
 if($mysqli->connect_error){
-    error_log("MySQL Connect Error: ".$mysqli->connect_error);
-    echo json_encode(["status"=>"error","msg"=>"Database connection failed"]);
+    echo json_encode(["status"=>"error","msg"=>"MySQL connection failed"]);
     exit;
-    //die(json_encode(["status"=>"error","msg"=>"MySQL Error: ".$mysqli->connect_error]));
 }
 
-// MongoDB
+// --- MongoDB connection using Render environment variable ---
 require '../vendor/autoload.php';
 use MongoDB\Client;
 try {
-    $mongo = new Client("mongodb://localhost:27017");
-    //$mongo = new Client("mongodb+srv://ProfileHub-db:Nilaa%402004@nilaasri.gwznodq.mongodb.net");
-    //$mongo = new Client("mongodb+srv://sriselliprt_db_user:Nilaa@2004@profilehub.yvxrns6.mongodb.net/?retryWrites=true&w=majority&appName=ProfileHub");
-
+    $mongo = new Client(getenv("MONGO_URI"));
     $profiles = $mongo->new_profiles->profiles;
 }catch(Exception $e){
-    die(json_encode(["status"=>"error","msg"=>"MongoDB Error: ".$e->getMessage()]));
+    echo json_encode(["status"=>"error","msg"=>"MongoDB connection failed: ".$e->getMessage()]);
+    exit;
 }
 
-// Get POST Data
+// --- Get POST Data ---
 $name = trim($_POST['name'] ?? '');
 $email = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
@@ -39,8 +37,8 @@ $age = intval($_POST['age'] ?? 0);
 $address = trim($_POST['address'] ?? '');
 $gender = trim($_POST['gender'] ?? '');
 
-// Validation
-if(empty($name)||empty($email)||empty($password)){
+// --- Validation ---
+if(empty($name) || empty($email) || empty($password)){
     echo json_encode(["status"=>"error","msg"=>"Name, Email, Password required"]);
     exit;
 }
@@ -48,15 +46,15 @@ if(!filter_var($email,FILTER_VALIDATE_EMAIL)){
     echo json_encode(["status"=>"error","msg"=>"Invalid email"]);
     exit;
 }
-if($password!==$confirm){
+if($password !== $confirm){
     echo json_encode(["status"=>"error","msg"=>"Passwords do not match"]);
     exit;
 }
 
-// Hash password
+// --- Hash password ---
 $passHash = password_hash($password,PASSWORD_BCRYPT);
 
-// MySQL Insert
+// --- MySQL Insert ---
 $stmt = $mysqli->prepare("INSERT INTO users (email,password) VALUES (?,?)");
 $stmt->bind_param("ss",$email,$passHash);
 if($stmt->execute()){
@@ -77,7 +75,6 @@ if($stmt->execute()){
         echo json_encode(["status"=>"success","msg"=>"Registered successfully"]);
     }catch(Exception $e){
         $mysqli->query("DELETE FROM users WHERE id=$userId"); // rollback
-        error_log("MongoDB Insert Error: ".$e->getMessage());
         echo json_encode(["status"=>"error","msg"=>"MongoDB insert failed"]);
     }
 }else{
