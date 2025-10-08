@@ -16,7 +16,7 @@ if($mysqli->connect_error){
 }
 
 // --- MongoDB connection using Render environment variable ---
-require '../vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 use MongoDB\Client;
 try {
     $mongo = new Client(getenv("MONGO_URI"));
@@ -84,3 +84,4 @@ if($stmt->execute()){
 $stmt->close();
 $mysqli->close();
 ?>
+
