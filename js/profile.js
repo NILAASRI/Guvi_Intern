@@ -10,7 +10,7 @@ $(document).ready(function() {
     // --- Fetch Profile ---
     function fetchProfile() {
         $.ajax({
-            url: "php/profile.php",
+            url: "https://your-render-backend.onrender.com/php/profile.php",
             type: "POST",
             contentType: "application/json",
             dataType: "json",
@@ -96,3 +96,4 @@ $(document).ready(function() {
     });
 
 });
+
