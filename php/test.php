@@ -1,26 +1,19 @@
 <?php
-ini_set('display_errors',1); // temporarily for debugging
-error_reporting(E_ALL);
 header('Content-Type: application/json');
-
 try {
-    $host = getenv('MYSQL_HOST');
-    $port = getenv('MYSQL_PORT');
-    $user = getenv('MYSQL_USER');
-    $pass = getenv('MYSQL_PASSWORD');
-    $db   = getenv('MYSQL_DB');
-
+    // Test MySQL
     $mysqli = mysqli_init();
-    $mysqli->ssl_set(NULL, NULL, '/etc/ssl/certs/ca-certificates.crt', NULL, NULL);
-    if(!$mysqli->real_connect($host,$user,$pass,$db,$port, NULL, MYSQLI_CLIENT_SSL)){
-        throw new Exception("MySQL connect failed: ".$mysqli->connect_error);
+    $mysqli->ssl_set(NULL,NULL,'/etc/ssl/certs/ca-certificates.crt',NULL,NULL);
+    if(!$mysqli->real_connect(getenv('MYSQL_HOST'), getenv('MYSQL_USER'), getenv('MYSQL_PASSWORD'), getenv('MYSQL_DB'), getenv('MYSQL_PORT'), NULL, MYSQLI_CLIENT_SSL)){
+        throw new Exception("MySQL connection failed: ".$mysqli->connect_error);
     }
 
-    require __DIR__.'/../vendor/autoload.php';
+    // Test MongoDB
+    require __DIR__.'/vendor/autoload.php';
     $mongo = new MongoDB\Client(getenv('MONGO_URL'));
-    $mongo->listDatabases(); // test connection
+    $mongo->listDatabases();
 
-    echo json_encode(['status'=>'ok','msg'=>'All connections are OK']);
+    echo json_encode(['status'=>'ok','msg'=>'All connections OK']);
 } catch(Exception $e){
     echo json_encode(['status'=>'error','msg'=>$e->getMessage()]);
 }
