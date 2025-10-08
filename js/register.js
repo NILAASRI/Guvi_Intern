@@ -33,7 +33,7 @@ $(document).ready(function() {
   // AJAX registration
   $(document).on("click", "#registerBtn", function() {
     $.ajax({
-      url: "https://profilehub-backend.onrender.com/php/register.php",
+      url: "https://guvi-intern-md3o.onrender.com/php/register.php",
       type: "POST",
       data: {
         name: $("#name").val(),
@@ -63,4 +63,5 @@ $(document).ready(function() {
   });
 
 });
+
 
