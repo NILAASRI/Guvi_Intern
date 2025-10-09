@@ -1,19 +1,14 @@
 <?php
-header('Content-Type: application/json');
-try {
-    // Test MySQL
-    $mysqli = mysqli_init();
-    $mysqli->ssl_set(NULL,NULL,'/etc/ssl/certs/ca-certificates.crt',NULL,NULL);
-    if(!$mysqli->real_connect(getenv('MYSQL_HOST'), getenv('MYSQL_USER'), getenv('MYSQL_PASSWORD'), getenv('MYSQL_DB'), getenv('MYSQL_PORT'), NULL, MYSQLI_CLIENT_SSL)){
-        throw new Exception("MySQL connection failed: ".$mysqli->connect_error);
-    }
+$servername = "mysql-name-profilehub.aivencloud.com";
+$username = "avnadmin";
+$password = "AVNS_uo6_8dHnxa...";
+$dbname = "defaultdb";
+$port = 22362;
 
-    // Test MongoDB
-    require __DIR__.'/vendor/autoload.php';
-    $mongo = new MongoDB\Client(getenv('MONGO_URL'));
-    $mongo->listDatabases();
+$conn = mysqli_init();
+mysqli_ssl_set($conn, NULL, NULL, NULL, NULL, NULL);
 
-    echo json_encode(['status'=>'ok','msg'=>'All connections OK']);
-} catch(Exception $e){
-    echo json_encode(['status'=>'error','msg'=>$e->getMessage()]);
+if (!mysqli_real_connect($conn, $servername, $username, $password, $dbname, $port, NULL, MYSQLI_CLIENT_SSL_DONT_VERIFY_SERVER_CERT)) {
+    die(json_encode(["status" => "error", "msg" => "Database connection failed: " . mysqli_connect_error()]));
 }
+?>
