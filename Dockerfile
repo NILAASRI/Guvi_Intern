@@ -1,54 +1,24 @@
-# =====================
-# Base PHP + Apache image
-# =====================
+# Use official PHP + Apache base image
 FROM php:8.1-apache
 
-# =====================
-# Install system dependencies
-# =====================
+# Install necessary system packages and PHP extensions
 RUN apt-get update && apt-get install -y \
-    libssl-dev \
-    libzip-dev \
-    unzip \
-    git \
-    wget \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+    git zip unzip libpng-dev libonig-dev libxml2-dev libcurl4-openssl-dev pkg-config libssl-dev \
+    && docker-php-ext-install pdo pdo_mysql mysqli \
+    && pecl install redis mongodb \
+    && docker-php-ext-enable redis mongodb
 
-# =====================
-# Install PHP extensions
-# =====================
-RUN docker-php-ext-install pdo_mysql \
-    && pecl install mongodb redis \
-    && docker-php-ext-enable mongodb redis
-
-# =====================
-# Enable Apache modules (rewrite)
-# =====================
+# Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
-# =====================
 # Set working directory
-# =====================
 WORKDIR /var/www/html
 
-# =====================
-# Copy project files
-# =====================
+# Copy your project files into the container
 COPY . /var/www/html
 
-# =====================
-# Install Composer dependencies
-# =====================
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-RUN composer install --no-dev --prefer-dist --optimize-autoloader
-
-# =====================
-# Expose port 80
-# =====================
+# Expose Apache port
 EXPOSE 80
 
-# =====================
-# Start Apache
-# =====================
+# Start Apache in foreground
 CMD ["apache2-foreground"]
