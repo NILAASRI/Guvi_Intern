@@ -12,7 +12,7 @@ $db   = getenv('MYSQL_DB');
 
 $mysqli = mysqli_init();
 $mysqli->ssl_set(NULL, NULL, '/etc/ssl/certs/ca-certificates.crt', NULL, NULL); 
-if (!$mysqli->real_connect($host, $user, $pass, $db, $port, NULL, MYSQLI_CLIENT_SSL)) {
+if (!$mysqli->real_connect($host, $user, $pass, $db, $port)) {
     echo json_encode(['status'=>'error','msg'=>'MySQL connect failed: '.$mysqli->connect_error]);
     exit;
 }
@@ -116,3 +116,4 @@ if($stmt->execute()){
 $stmt->close();
 $mysqli->close();
 ?>
+
