@@ -1,20 +1,22 @@
 <?php
-header('Content-Type: application/json');
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
-$servername = "mysql-name-profilehub.aivencloud.com";
-$username = "avnadmin";
-$password = "AVNS_uo6_8dHnxa...";
-$dbname = "defaultdb";
-$port = 22362;
+$mysqli = mysqli_init();
+mysqli_ssl_set($mysqli, NULL, NULL, NULL, NULL, NULL);
 
-$conn = mysqli_init();
-$conn->ssl_set(NULL, NULL, NULL, NULL, NULL);
-
-if (!mysqli_real_connect($conn, $servername, $username, $password, $dbname, $port, NULL, MYSQLI_CLIENT_SSL_DONT_VERIFY_SERVER_CERT)) {
-    echo json_encode(["status" => "error", "msg" => "Database connection failed: " . mysqli_connect_error()]);
-    exit;
+if (!mysqli_real_connect(
+    $mysqli,
+    getenv("MYSQL_HOST"),
+    getenv("MYSQL_USER"),
+    getenv("MYSQL_PASSWORD"),
+    getenv("MYSQL_DB"),
+    3306,
+    NULL,
+    MYSQLI_CLIENT_SSL
+)) {
+    die("❌ Connection failed: " . mysqli_connect_error());
 }
 
-echo json_encode(["status" => "success", "msg" => "Connected successfully"]);
-$conn->close();
+echo "✅ MySQL connected successfully!";
 ?>
