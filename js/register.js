@@ -1,6 +1,6 @@
-$(document).ready(function() {
+$(document).ready(function () {
   // Step 1 → Step 2
-  $("#nextBtn").click(function() {
+  $("#nextBtn").click(function () {
     let name = $("#name").val().trim();
     let email = $("#email").val().trim();
     let password = $("#password").val().trim();
@@ -16,7 +16,7 @@ $(document).ready(function() {
       return;
     }
     if (!terms) {
-      alert("Please accept terms & conditions.");
+      alert("Please accept the terms and conditions.");
       return;
     }
 
@@ -25,16 +25,17 @@ $(document).ready(function() {
   });
 
   // Step 2 → Step 1
-  $("#backBtn").click(function() {
+  $("#backBtn").click(function () {
     $("#step2").hide();
     $("#step1").show();
   });
 
-  // AJAX registration
-  $(document).on("click", "#registerBtn", function() {
+  // Submit registration
+  $("#registerBtn").click(function () {
     $.ajax({
       url: "https://guvi-intern-md3o.onrender.com/php/register.php",
       type: "POST",
+      dataType: "json",
       data: {
         name: $("#name").val(),
         email: $("#email").val(),
@@ -46,24 +47,23 @@ $(document).ready(function() {
         address: $("#address").val(),
         gender: $("#gender").val()
       },
-      dataType: "json", // jQuery parses JSON automatically
-      success: function(res) {
+      beforeSend: function () {
+        console.log("Sending registration request...");
+      },
+      success: function (res) {
+        console.log("Response:", res);
         alert(res.msg);
-        if(res.status === "success") {
+        if (res.status === "success") {
           $("#registerForm")[0].reset();
           $("#step2").hide();
           $("#step1").show();
         }
       },
-      error: function(xhr, status, error) {
+      error: function (xhr, status, error) {
         console.error("AJAX Error:", status, error);
-        console.log("Response Text:", xhr.responseText); // see what PHP actually sent
-        alert("Error during registration!");
+        console.log("Response Text:", xhr.responseText);
+        alert("Error during registration. Check console logs.");
       }
     });
   });
-
 });
-
-
-
