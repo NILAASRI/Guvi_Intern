@@ -2,9 +2,9 @@ $(document).ready(function() {
   $("#loginForm").on("submit", function(e) {
     e.preventDefault();
 
-    let email = $("#loginEmail").val().trim();
-    let password = $("#loginPassword").val().trim();
-    let remember = $("#rememberMe").is(":checked") ? 1 : 0;
+    const email = $("#loginEmail").val().trim();
+    const password = $("#loginPassword").val().trim();
+    const remember = $("#rememberMe").is(":checked");
 
     if (!email || !password) {
       alert("Please enter both email and password");
@@ -15,25 +15,30 @@ $(document).ready(function() {
       url: "https://guvi-intern-md3o.onrender.com/php/login.php",
       method: "POST",
       dataType: "json",
-      data: { email, password, remember },
+      data: { email, password },
       beforeSend: function() {
-        console.log("Sending login request...");
+        console.log("Logging in...");
       },
-      success: function(response) {
-        console.log("Response:", response);
-        if (response.status === "success") {
-          // Use sessionStorage for cloud session
-          sessionStorage.setItem("sessionId", response.sessionId);
+      success: function(res) {
+        console.log("Server Response:", res);
+        if (res.status === "success") {
+          // Store session depending on Remember Me
+          if (remember) {
+            localStorage.setItem("sessionId", res.sessionId);
+          } else {
+            sessionStorage.setItem("sessionId", res.sessionId);
+          }
+
           alert("Login successful!");
           window.location.href = "profile.html";
         } else {
-          alert(response.msg || "Invalid credentials");
+          alert(res.msg || "Invalid email or password");
         }
       },
       error: function(xhr, status, error) {
-        console.error("Login AJAX error:", status, error);
-        console.log("Response text:", xhr.responseText);
-        alert("Login request failed. Please check console logs.");
+        console.error("Login error:", status, error);
+        console.log("Response:", xhr.responseText);
+        alert("Server error. Please try again.");
       }
     });
   });
