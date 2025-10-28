@@ -27,3 +27,9 @@ RUN sed -i 's/80/${PORT}/g' /etc/apache2/ports.conf /etc/apache2/sites-enabled/0
 
 # ✅ Start Apache
 CMD ["apache2-foreground"]
+
+COPY composer.json composer.lock /var/www/html/
+RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \
+    php composer-setup.php --install-dir=/usr/local/bin --filename=composer && \
+    composer install --no-dev -d /var/www/html
+
