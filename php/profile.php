@@ -28,7 +28,8 @@ require '../vendor/autoload.php';
 use MongoDB\Client;
 try{
     $mongo = new Client(getenv("MONGO_URI"));
-    $profiles = $mongo->new_profiles->profiles;
+    $dbName = getenv("MONGO_DB") ?: "profilehub";
+    $profiles = $mongo->$dbName->profiles;
 }catch(Exception $e){
     echo json_encode(["status"=>"error","msg"=>"MongoDB connection failed: ".$e->getMessage()]);
     exit;
@@ -65,9 +66,24 @@ if($action === "fetch"){
     }
 
     $profile = $profiles->findOne(["userId"=>intval($userId)]);
+
     if(!$profile){
-        echo json_encode(["status"=>"error","msg"=>"User profile not found in MongoDB"]);
-        exit;
+        $profile = [
+            "name" => "",
+            "dob" => "",
+            "contact" => "",
+            "age" => "",
+            "address" => "",
+            "gender" => ""
+        ];
+    }
+
+    // calculate age if dob exists
+    $age = "";
+    if (!empty($profile['dob'])) {
+        $birthDate = new DateTime($profile['dob']);
+        $today = new DateTime('today');
+        $age = $birthDate->diff($today)->y;
     }
 
     echo json_encode([
@@ -78,7 +94,7 @@ if($action === "fetch"){
             "name"=>$profile['name'] ?? "",
             "dob"=>$profile['dob'] ?? "",
             "contact"=>$profile['contact'] ?? "",
-            "age"=>$profile['age'] ?? "",
+            "age"=>$age,
             "address"=>$profile['address'] ?? "",
             "gender"=>$profile['gender'] ?? ""
         ]
@@ -97,7 +113,8 @@ if($action === "update"){
     try{
         $result = $profiles->updateOne(
             ["userId"=>intval($userId)],
-            ['$set'=>$updateData]
+            ['$set'=>$updateData],
+            ['upsert' => true]
         );
 
         if($result->getModifiedCount() > 0){
