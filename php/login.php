@@ -14,11 +14,11 @@ mysqli_ssl_set($mysqli, NULL, NULL, NULL, NULL, NULL);
 
 if (!mysqli_real_connect(
     $mysqli,
-    getenv("MYSQL_HOST"),        // e.g., mysql-name-profilehub.aivencloud.com
-    getenv("MYSQL_USER"),        // e.g., avnadmin
-    getenv("MYSQL_PASSWORD"),    // your Aiven password
-    getenv("MYSQL_DB"),          // e.g., student
-    3306,                        // port
+    getenv("MYSQL_HOST"),
+    getenv("MYSQL_USER"),
+    getenv("MYSQL_PASSWORD"),
+    getenv("MYSQL_DB"),
+    3306,
     NULL,
     MYSQLI_CLIENT_SSL
 )) {
@@ -46,14 +46,26 @@ $result = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
 if ($result && password_verify($password, $result['password'])) {
+    $userId = $result['id'];
     $sessionId = bin2hex(random_bytes(16)); // unique session token
 
-    //Temporarily store session in PHP (optional - you can later use Redis)
-    session_start();
-    $_SESSION['sessionId'] = $sessionId;
-    $_SESSION['userId'] = $result['id'];
+    // --- Connect to Redis ---
+    try {
+        $redis = new Redis();
+        $redis->connect(getenv("REDIS_HOST"), 6379);
 
-    echo json_encode(["status" => "success", "sessionId" => $sessionId]);
+        // store session -> userId mapping for 1 hour
+        $redis->set($sessionId, $userId, 3600);
+    } catch (Exception $e) {
+        echo json_encode(["status" => "error", "msg" => "Redis connection failed: " . $e->getMessage()]);
+        exit;
+    }
+
+    // --- Response to frontend ---
+    echo json_encode([
+        "status" => "success",
+        "sessionId" => $sessionId
+    ]);
 } else {
     echo json_encode(["status" => "error", "msg" => "Invalid login"]);
 }
