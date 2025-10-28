@@ -1,6 +1,7 @@
 <?php
 header('Content-Type: application/json');
 ini_set('display_errors', 0); // Hide warnings in production
+error_reporting(E_ALL);
 
 // Allow only your frontend domain (important for CORS)
 header("Access-Control-Allow-Origin: https://guvi-intern-md3o.onrender.com");
@@ -129,3 +130,4 @@ if ($stmt->execute()) {
 $stmt->close();
 $mysqli->close();
 ?>
+
