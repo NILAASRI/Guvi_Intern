@@ -1,24 +1,29 @@
-# Use official PHP Apache image
+# Use official PHP + Apache image
 FROM php:8.2-apache
 
-# Enable SSL, mysqli, redis, and mongodb extensions
+# Install system dependencies and PHP extensions
 RUN apt-get update && apt-get install -y \
-    libssl-dev pkg-config git unzip && \
+    libssl-dev pkg-config git unzip ca-certificates && \
     docker-php-ext-install mysqli && \
     pecl install redis mongodb && \
-    docker-php-ext-enable redis mongodb mysqli
+    docker-php-ext-enable redis mongodb mysqli && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copy app code to container
+# Copy application code
 COPY . /var/www/html/
 
-# Enable Apache rewrite & SSL
+# Enable Apache modules for clean URLs and SSL
 RUN a2enmod rewrite ssl
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html
 
-# Expose the port Render expects
+# Expose Render’s required port
 EXPOSE 10000
 
-# Start Apache
+# Tell Apache to listen on Render’s port
+ENV PORT=10000
+RUN sed -i 's/80/${PORT}/g' /etc/apache2/ports.conf /etc/apache2/sites-enabled/000-default.conf
+
+# ✅ Start Apache
 CMD ["apache2-foreground"]
